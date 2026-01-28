@@ -29,7 +29,7 @@ const VacanciesList = () => {
     dispatch(setCurrentPage(newPage));
   };
 
-  // Создаем массив страниц для отображения (максимум 5 страниц)
+  
   const getVisiblePages = () => {
     const pages = [];
     const maxVisible = 5;
@@ -72,7 +72,7 @@ const VacanciesList = () => {
 
   return (
     <Box>
-      {/* Список вакансий */}
+     
       {vacancies.length === 0 ? (
         <Center style={{ height: '200px' }}>
           <Text style={{ fontFamily: '"Open Sans", sans-serif' }}>
@@ -86,12 +86,11 @@ const VacanciesList = () => {
               <VacancyCard key={vacancy.id} vacancy={vacancy} />
             ))}
           </div>
-          
-          {/* Пагинация */}
+   
           {totalPages > 1 && (
             <Center mt={32}>
               <Group gap="10px">
-                {/* Кнопка "<" */}
+              
                 <Button
                   variant="outline"
                   size="xs"
@@ -111,7 +110,7 @@ const VacanciesList = () => {
                   &lt;
                 </Button>
 
-                {/* Номера страниц */}
+                
                 {visiblePages.map((page) => (
                   <Button
                     key={page}
@@ -136,7 +135,7 @@ const VacanciesList = () => {
                   </Button>
                 ))}
 
-                {/* Кнопка ">" */}
+             
                 <Button
                   variant="outline"
                   size="xs"

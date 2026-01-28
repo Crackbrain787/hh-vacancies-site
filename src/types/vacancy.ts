@@ -47,7 +47,7 @@ export interface Snippet {
   responsibility?: string;
 }
 
-// Интерфейсы для дополнительных полей
+
 export interface ProfessionalRole {
   id: string;
   name: string;
@@ -109,13 +109,13 @@ export interface WorkingTimeMode {
 export interface Relation {
   id: string;
   name: string;
-  // Можно добавить больше полей при необходимости
+ 
 }
 
 export interface Brand {
   id: string;
   name: string;
-  // Можно добавить больше полей при необходимости
+  
 }
 
 export interface Vacancy {
@@ -132,7 +132,7 @@ export interface Vacancy {
   published_at: string;
   snippet: Snippet;
   
-  // Дополнительные поля от API hh.ru
+ 
   type?: VacancyType;
   has_test?: boolean;
   response_letter_required?: boolean;
@@ -161,12 +161,12 @@ export interface Vacancy {
 export interface Cluster {
   name: string;
   id: string;
-  // Можно добавить больше полей при необходимости
+  
 }
 
 export interface Argument {
   name: string;
-  // Можно добавить больше полей при необходимости
+  
 }
 
 export interface VacanciesResponse {

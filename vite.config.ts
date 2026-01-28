@@ -12,6 +12,7 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     css: true,
   },
+   base: '/hh-vac-site/',
   server: {
     proxy: {
       '/api': {

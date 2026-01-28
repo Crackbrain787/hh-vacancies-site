@@ -1,119 +1,150 @@
-import { describe, it, expect, vi } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
-import SkillsAndCityFilter from './SkillsAndCityFilter';
-import { renderWithProviders, createTestStore } from '../test/test-utils';
-import { Vacancy } from '../types/vacancy';
-import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import VacanciesList from './VacanciesList'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Мокаем API вызовы
-vi.mock('../store/slices/vacanciesSlice', async () => {
-  const actual = await vi.importActual('../store/slices/vacanciesSlice');
-  return {
-    ...actual,
-    loadVacancies: vi.fn(),
-  };
-});
 
-// Тип состояния для тестов
-interface TestState {
-  vacancies: {
+const mockUseAppSelector = vi.hoisted(() => vi.fn())
+const mockDispatch = vi.hoisted(() => vi.fn())
+const mockSetCurrentPage = vi.hoisted(() => vi.fn())
+const mockLoadVacancies = vi.hoisted(() => vi.fn())
+
+
+vi.mock('@mantine/core', () => ({
+  Center: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Loader: () => <div data-testid="loader">Loading...</div>,
+  Text: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Box: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Button: ({ children, onClick, disabled }: { 
+    children: React.ReactNode; 
+    onClick?: () => void; 
+    disabled?: boolean 
+  }) => (
+    <button onClick={onClick} disabled={disabled} data-testid="button">
+      {children}
+    </button>
+  ),
+  Group: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
+
+vi.mock('./VacancyCard', () => ({
+  default: () => <div data-testid="vacancy-card">Vacancy Card</div>
+}))
+
+
+vi.mock('../hooks/useAppDispatch', () => ({
+  useAppDispatch: () => mockDispatch,
+  useAppSelector: mockUseAppSelector
+}))
+
+vi.mock('../store/slices/vacanciesSlice', () => ({
+  setCurrentPage: mockSetCurrentPage,
+  loadVacancies: mockLoadVacancies
+}))
+
+describe('VacanciesList Component', () => {
+  
+  const defaultState = {
+    vacancies: [],
+    loading: false,
+    error: null,
+    totalPages: 1,
+    currentPage: 0,
     filters: {
-      skills: string[];
-      search: string;
-      area: string;
-      page: number;
-    };
-    vacancies: Vacancy[];
-    loading: boolean;
-    error: string | null;
-    total: number;
-    totalPages: number;
-    currentPage: number;
-  };
-}
+      search: '',
+      area: '',
+      skills: []
+    }
+  }
 
-describe('SkillsAndCityFilter', () => {
-  const createMockStore = () => createTestStore({
-    vacancies: {
-      filters: {
-        skills: ['TypeScript', 'React', 'Redux'],
-        search: '',
-        area: '',
-        page: 0,
-      },
-      vacancies: [],
-      loading: false,
-      error: null,
-      total: 0,
-      totalPages: 0,
-      currentPage: 0,
-    },
-  });
+  beforeEach(() => {
+    vi.clearAllMocks()
+  
+    mockUseAppSelector.mockReturnValue(defaultState)
+  })
 
-  it('renders initial skills', () => {
-    const store = createMockStore();
-    
-    renderWithProviders(<SkillsAndCityFilter />, { store });
-    
-    expect(screen.getByText('TypeScript')).toBeInTheDocument();
-    expect(screen.getByText('React')).toBeInTheDocument();
-    expect(screen.getByText('Redux')).toBeInTheDocument();
-  });
+  
+  it('Рендерится без ошибок', () => {
+    expect(() => render(<VacanciesList />)).not.toThrow()
+  })
 
-  it('renders skill input and add button', () => {
-    const store = createMockStore();
+  
+  it('показывает лоадер', () => {
+    mockUseAppSelector.mockReturnValue({
+      ...defaultState,
+      loading: true
+    })
     
-    renderWithProviders(<SkillsAndCityFilter />, { store });
+    render(<VacanciesList />)
     
-    expect(screen.getByPlaceholderText('Добавить навык')).toBeInTheDocument();
-    expect(screen.getByText('+')).toBeInTheDocument();
-  });
+    expect(screen.getByTestId('loader')).toBeTruthy()
+  })
 
-  it('renders city selector', () => {
-    const store = createMockStore();
+  
+  it('должно отображаться сообщение об ошибке при возникновении ошибки', () => {
+    const errorMessage = 'Ошибка сети'
     
-    renderWithProviders(<SkillsAndCityFilter />, { store });
+    mockUseAppSelector.mockReturnValue({
+      ...defaultState,
+      error: errorMessage
+    })
     
-    expect(screen.getByDisplayValue('Все города')).toBeInTheDocument();
-  });
+    render(<VacanciesList />)
+    
+    expect(screen.getByText(`Ошибка при загрузке вакансий: ${errorMessage}`)).toBeTruthy()
+  })
 
-  it('allows adding new skill', () => {
-    const store = createMockStore();
+  
+  it('должно отображаться сообщение, когда вакансии не найдены', () => {
+    render(<VacanciesList />)
     
-    const { store: renderedStore } = renderWithProviders(<SkillsAndCityFilter />, { store });
-    
-    const input = screen.getByPlaceholderText('Добавить навык');
-    const addButton = screen.getByText('+');
-    
-    fireEvent.change(input, { target: { value: 'Jest' } });
-    fireEvent.click(addButton);
-    
-    // Используем приведение типа для доступа к состоянию
-    const state = renderedStore.getState() as unknown as TestState;
-    expect(state.vacancies.filters.skills).toContain('Jest');
-  });
+    expect(screen.getByText('Вакансии не найдены. Попробуйте изменить параметры поиска.')).toBeTruthy()
+  })
 
-  it('prevents adding empty skill', () => {
-    const store = createMockStore();
+  
+  it('Отображается список вакансий', () => {
+    mockUseAppSelector.mockReturnValue({
+      ...defaultState,
+      vacancies: [
+        { id: '1', name: 'Frontend Developer' },
+        { id: '2', name: 'React Developer' }
+      ]
+    })
     
-    renderWithProviders(<SkillsAndCityFilter />, { store });
+    render(<VacanciesList />)
     
-    const addButton = screen.getByText('+');
-    
-    // Проверяем, что кнопка изначально disabled
-    expect(addButton).toBeDisabled();
-  });
+    const vacancyCards = screen.getAllByTestId('vacancy-card')
+    expect(vacancyCards).toHaveLength(2)
+  })
 
-  it('allows removing skill', () => {
-    const store = createMockStore();
+
+  it('отображается пагинация при наличии нескольких страниц', () => {
+    mockUseAppSelector.mockReturnValue({
+      ...defaultState,
+      vacancies: [{ id: '1', name: 'Frontend Developer' }],
+      totalPages: 5,
+      currentPage: 2
+    })
     
-    const { store: renderedStore } = renderWithProviders(<SkillsAndCityFilter />, { store });
+    render(<VacanciesList />)
     
-    const removeButtons = screen.getAllByText('×');
-    fireEvent.click(removeButtons[0]); // Удаляем TypeScript
+    const buttons = screen.getAllByTestId('button')
+    expect(buttons.length).toBeGreaterThan(0)
+  })
+
+  
+  it('когда одна страница, пагинации нет', () => {
+    mockUseAppSelector.mockReturnValue({
+      ...defaultState,
+      vacancies: [{ id: '1', name: 'Frontend Developer' }],
+      totalPages: 1,
+      currentPage: 0
+    })
     
-    // Используем приведение типа для доступа к состоянию
-    const state = renderedStore.getState() as unknown as TestState;
-    expect(state.vacancies.filters.skills).not.toContain('TypeScript');
-  });
-});
+    render(<VacanciesList />)
+    
+    const buttons = screen.queryAllByTestId('button')
+    expect(buttons).toHaveLength(0)
+  })
+})

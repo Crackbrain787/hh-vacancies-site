@@ -21,12 +21,12 @@ export const loadVacancies = createAsyncThunk(
   'vacancies/loadVacancies',
   async (params: FetchVacanciesParams, { rejectWithValue }) => {
     try {
-      // Добавляем небольшую задержку чтобы не превысить лимиты API (5 запросов в минуту)
+      
       await new Promise(resolve => setTimeout(resolve, 200));
       const response = await fetchVacancies(params);
       return response;
     } catch (error) {
-      // Типизируем ошибку
+      
       const err = error as { response?: { data?: { message?: string } } };
       const errorMessage = err.response?.data?.message || (error as Error).message || 'Ошибка при загрузке вакансий';
       console.error('Error in loadVacancies:', errorMessage);

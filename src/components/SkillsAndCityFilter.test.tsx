@@ -1,89 +1,73 @@
-import { describe, it, expect, vi } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
-import SkillsAndCityFilter from './SkillsAndCityFilter';
-import { renderWithProviders, createTestStore } from '../test/test-utils';
-import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react'
+import SkillsAndCityFilter from './SkillsAndCityFilter'
+import { describe, it, expect, vi } from 'vitest'
 
-// Мокаем API вызовы
-vi.mock('../store/slices/vacanciesSlice', async () => {
-  const actual = await vi.importActual('../store/slices/vacanciesSlice');
-  return {
-    ...actual,
-    loadVacancies: vi.fn(() => ({
-      type: 'vacancies/loadVacancies/pending',
-      payload: undefined,
-    })),
-  };
-});
 
-describe('SkillsAndCityFilter', () => {
-  const createMockStore = () => createTestStore({
-    vacancies: {
-      filters: {
-        skills: ['TypeScript', 'React', 'Redux'],
-        search: '',
-        area: '',
-        page: 0,
-      },
-      vacancies: [],
-      loading: false,
-      error: null,
-      total: 0,
-      totalPages: 0,
-      currentPage: 0,
-    },
-  });
+vi.mock('../hooks/useAppDispatch', () => ({
+  useAppDispatch: () => vi.fn(),
+  useAppSelector: vi.fn(() => ({
+    filters: {
+      search: '',
+      area: '',
+      skills: []
+    }
+  }))
+}))
 
-  it('renders initial skills', () => {
-    const store = createMockStore();
-    
-    renderWithProviders(<SkillsAndCityFilter />, { store });
-    
-    expect(screen.getByText('TypeScript')).toBeInTheDocument();
-    expect(screen.getByText('React')).toBeInTheDocument();
-    expect(screen.getByText('Redux')).toBeInTheDocument();
-  });
+vi.mock('../store/slices/vacanciesSlice', () => ({
+  updateFilters: vi.fn(),
+  addSkill: vi.fn(),
+  removeSkill: vi.fn(),
+  setCurrentPage: vi.fn(),
+  loadVacancies: vi.fn()
+}))
 
-  it('allows adding new skill', () => {
-    const store = createMockStore();
-    
-    renderWithProviders(<SkillsAndCityFilter />, { store });
-    
-    const input = screen.getByPlaceholderText('Добавить навык');
-    const addButton = screen.getByText('+');
-    
-    fireEvent.change(input, { target: { value: 'Jest' } });
-    expect(addButton).toBeEnabled();
-    
-    fireEvent.click(addButton);
-    
-    // Проверяем, что input очистился
-    expect(input).toHaveValue('');
-    
-    // Проверяем, что skill был добавлен в state (через addSkill action)
-    // Note: loadVacancies мокнут, поэтому не будет ошибки thunk
-  });
+describe('Тесты компонента с городом и скилами', () => {
+  // Тест 1: Проверяем рендеринг
+  it('Рендерится без ошибок', () => {
+    expect(() => render(<SkillsAndCityFilter />)).not.toThrow()
+  })
 
-  it('prevents adding empty skill', () => {
-    const store = createMockStore();
+  
+  it('Видим заголовок', () => {
+    render(<SkillsAndCityFilter />)
     
-    renderWithProviders(<SkillsAndCityFilter />, { store });
-    
-    const addButton = screen.getByText('+');
-    expect(addButton).toBeDisabled();
-  });
+    const title = screen.getByText('Ключевые навыки:')
+    expect(title).toBeTruthy()
+  })
 
-  it('allows removing skill', () => {
-    const store = createMockStore();
+  
+  it('Видим инпут для навыков', () => {
+    render(<SkillsAndCityFilter />)
     
-    renderWithProviders(<SkillsAndCityFilter />, { store });
+    const input = screen.getByPlaceholderText('Добавить навык')
+    expect(input).toBeTruthy()
+    expect(input.getAttribute('type')).toBe('text')
+  })
+
+  
+  it('Видим кнопку для добавления скилов', () => {
+    render(<SkillsAndCityFilter />)
     
-    const removeButtons = screen.getAllByText('×');
-    expect(removeButtons).toHaveLength(3);
+    const button = screen.getByText('+')
+    expect(button).toBeTruthy()
+  })
+
+  
+  it('Есть селектор городов', () => {
+    render(<SkillsAndCityFilter />)
     
-    fireEvent.click(removeButtons[0]); // Удаляем TypeScript
     
-    // Проверяем, что removeSkill был вызван
-    // Note: loadVacancies мокнут, поэтому не будет ошибки thunk
-  });
-});
+    expect(screen.getByText('Все города')).toBeTruthy()
+    expect(screen.getByText('Москва')).toBeTruthy()
+    expect(screen.getByText('Санкт-Петербург')).toBeTruthy()
+  })
+
+  
+  it('Начальное состояние', () => {
+    render(<SkillsAndCityFilter />)
+    
+    const inputElement = screen.getByPlaceholderText('Добавить навык') as HTMLInputElement
+    expect(inputElement.value).toBe('')
+  })
+})

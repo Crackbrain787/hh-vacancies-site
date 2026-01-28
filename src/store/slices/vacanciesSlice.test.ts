@@ -26,7 +26,7 @@ const initialState: VacanciesState = {
 
 describe('vacanciesSlice', () => {
   describe('reducers', () => {
-    it('should return initial state', () => {
+    it('Начальное значение', () => {
       expect(vacanciesReducer(undefined, { type: 'unknown' })).toEqual(initialState);
     });
 
@@ -75,15 +75,15 @@ describe('vacanciesSlice', () => {
     });
   });
 
-  describe('extra reducers', () => {
-    it('should handle loadVacancies.pending', () => {
+  describe('дополнительные reducers', () => {
+    it('В компоненте обрабатывается состояние загрузки (pending) от Redux thunk', () => {
       const action = { type: loadVacancies.pending.type };
       const state = vacanciesReducer(initialState, action);
       expect(state.loading).toBe(true);
       expect(state.error).toBe(null);
     });
 
-    it('should handle loadVacancies.fulfilled', () => {
+    it('Компонент обрабатывает успешное завершение загрузки вакансий (состояние fulfilled в Redux Toolkit).', () => {
       const mockResponse = {
         items: [
           {
@@ -121,7 +121,7 @@ describe('vacanciesSlice', () => {
       expect(state.currentPage).toBe(0);
     });
 
-    it('should handle loadVacancies.rejected', () => {
+    it('компонент обрабатывает состояние ошибки при загрузке вакансий', () => {
       const errorMessage = 'Network error';
       const action = {
         type: loadVacancies.rejected.type,
